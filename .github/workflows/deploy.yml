@@ -13,6 +13,9 @@ jobs:
     strategy:
       matrix:
         environment: [uat, production] # Define environments
+        host: [uat.moneytreerealty.in, moneytreerealty.in]
+        user: [UAT_USER, PRODUCTION_USER]
+        path: [UAT_PATH, PRODUCTION_PATH]
 
     steps:
       # Step 1: Checkout the repository
@@ -40,9 +43,9 @@ jobs:
       - name: Deploy to Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.UAT_HOST if matrix.environment == 'uat' else secrets.PRODUCTION_HOST }}
-          USER: ${{ secrets.UAT_USER if matrix.environment == 'uat' else secrets.PRODUCTION_USER }}
-          DEPLOY_PATH: ${{ secrets.UAT_DEPLOY_PATH if matrix.environment == 'uat' else secrets.PRODUCTION_DEPLOY_PATH }}
+          HOST: ${{ secrets[matrix.host] }}
+          USER: ${{ secrets[matrix.user] }}
+          DEPLOY_PATH: ${{ secrets[matrix.path] }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
