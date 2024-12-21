@@ -36,13 +36,26 @@ jobs:
         run: |
           chmod -R 777 storage bootstrap/cache
 
-      # Step 5: Deploy to Server
+      # Step 5: Set Environment Variables
+      - name: Set Environment Variables
+        run: |
+          if [ "${{ matrix.environment }}" = "uat" ]; then
+            echo "HOST=${{ secrets.UAT_HOST }}" >> $GITHUB_ENV
+            echo "USER=${{ secrets.UAT_USER }}" >> $GITHUB_ENV
+            echo "PATH=${{ secrets.UAT_PATH }}" >> $GITHUB_ENV
+          else
+            echo "HOST=${{ secrets.PRODUCTION_HOST }}" >> $GITHUB_ENV
+            echo "USER=${{ secrets.PRODUCTION_USER }}" >> $GITHUB_ENV
+            echo "PATH=${{ secrets.PRODUCTION_PATH }}" >> $GITHUB_ENV
+          fi
+
+      # Step 6: Deploy to Server
       - name: Deploy to Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets.UAT_HOST if matrix.environment == 'uat' else secrets.PRODUCTION_HOST }}
-          USER: ${{ secrets.UAT_USER if matrix.environment == 'uat' else secrets.PRODUCTION_USER }}
-          PATH: ${{ secrets.UAT_PATH if matrix.environment == 'uat' else secrets.PRODUCTION_PATH }}
+          HOST: ${{ env.HOST }}
+          USER: ${{ env.USER }}
+          PATH: ${{ env.PATH }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
