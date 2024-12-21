@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
@@ -23,7 +23,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.1
+          php-version: 8.2
           extensions: mbstring, exif, pcntl, bcmath, intl, pdo, mysqli
           ini-values: post_max_size=256M, upload_max_filesize=256M
 
@@ -63,6 +63,7 @@ jobs:
           ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
           ssh $USER@$HOST "
             cd $PATH &&
+            git reset --hard &&
             git pull origin ${{ matrix.environment }} &&
             composer install --no-dev --prefer-dist --optimize-autoloader &&
             php artisan migrate --force &&
