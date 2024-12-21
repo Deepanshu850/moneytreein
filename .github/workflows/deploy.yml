@@ -12,47 +12,44 @@ jobs:
 
     strategy:
       matrix:
-        environment: [uat, production] # Define environments
-        host: [uat.moneytreerealty.in, moneytreerealty.in]
-        user: [UAT_USER, PRODUCTION_USER]
-        path: [UAT_PATH, PRODUCTION_PATH]
+        environment: [uat, main]
 
     steps:
       # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up PHP environment
+      # Step 2: Set up PHP
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.3
+          php-version: 8.1
           extensions: mbstring, exif, pcntl, bcmath, intl, pdo, mysqli
           ini-values: post_max_size=256M, upload_max_filesize=256M
 
-      # Step 3: Install Composer dependencies
+      # Step 3: Install Composer Dependencies
       - name: Install Composer dependencies
         run: composer install --no-dev --prefer-dist --optimize-autoloader
 
-      # Step 4: Set permissions for storage and cache
-      - name: Set permissions for storage and cache
+      # Step 4: Set Permissions for Storage and Cache
+      - name: Set permissions
         run: |
           chmod -R 777 storage bootstrap/cache
 
-      # Step 5: Deploy to the appropriate environment
+      # Step 5: Deploy to Server
       - name: Deploy to Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOST: ${{ secrets[matrix.host] }}
-          USER: ${{ secrets[matrix.user] }}
-          DEPLOY_PATH: ${{ secrets[matrix.path] }}
+          HOST: ${{ secrets.UAT_HOST if matrix.environment == 'uat' else secrets.PRODUCTION_HOST }}
+          USER: ${{ secrets.UAT_USER if matrix.environment == 'uat' else secrets.PRODUCTION_USER }}
+          PATH: ${{ secrets.UAT_PATH if matrix.environment == 'uat' else secrets.PRODUCTION_PATH }}
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan $HOST >> ~/.ssh/known_hosts
+          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
           ssh $USER@$HOST "
-            cd $DEPLOY_PATH &&
+            cd $PATH &&
             git pull origin ${{ matrix.environment }} &&
             composer install --no-dev --prefer-dist --optimize-autoloader &&
             php artisan migrate --force &&
